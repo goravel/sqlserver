@@ -249,7 +249,7 @@ func (r *Grammar) CompileIndex(blueprint contractsschema.Blueprint, command *con
 	)
 }
 
-func (r *Grammar) CompileIndexes(schema, table string) (string, error) {
+func (r *Grammar) CompileIndexes(_, table string) (string, error) {
 	schema, table, err := parseSchemaAndTable(table, "")
 	if err != nil {
 		return "", err
