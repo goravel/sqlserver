@@ -316,12 +316,13 @@ func (s *GrammarSuite) TestCompileRenameColumn() {
 
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 
-	sql := s.grammar.CompileRenameColumn(nil, mockBlueprint, &contractsschema.Command{
+	sql, err := s.grammar.CompileRenameColumn(nil, mockBlueprint, &contractsschema.Command{
 		Column: mockColumn,
 		From:   "before",
 		To:     "after",
 	})
 
+	s.Nil(err)
 	s.Equal(`sp_rename '"goravel_users"."before"', "after", N'COLUMN'`, sql)
 }
 
