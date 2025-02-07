@@ -7,7 +7,7 @@ import (
 
 const (
 	Binding = "goravel.sqlserver"
-	Name    = "sqlserver"
+	Name    = "SQL Server"
 )
 
 var App foundation.Application
