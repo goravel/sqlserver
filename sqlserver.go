@@ -8,7 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/database/driver"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/sqlserver/contracts"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ func (r *Sqlserver) Config() database.Config {
 	}
 }
 
-func (r *Sqlserver) Docker() (testing.DatabaseDriver, error) {
+func (r *Sqlserver) Docker() (docker.DatabaseDriver, error) {
 	writers := r.config.Writes()
 	if len(writers) == 0 {
 		return nil, errors.OrmDatabaseConfigNotFound
