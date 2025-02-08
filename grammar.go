@@ -288,6 +288,13 @@ func (r *Grammar) CompileRename(blueprint contractsschema.Blueprint, command *co
 	return fmt.Sprintf("sp_rename %s, %s", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())), r.wrap.Table(command.To))
 }
 
+func (r *Grammar) CompileRenameColumn(_ contractsschema.Schema, blueprint contractsschema.Blueprint, command *contractsschema.Command) (string, error) {
+	return fmt.Sprintf("sp_rename %s, %s, N'COLUMN'",
+		r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)),
+		r.wrap.Column(command.To),
+	), nil
+}
+
 func (r *Grammar) CompileRenameIndex(_ contractsschema.Schema, blueprint contractsschema.Blueprint, command *contractsschema.Command) []string {
 	return []string{
 		fmt.Sprintf("sp_rename %s, %s, N'INDEX'", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)), r.wrap.Column(command.To)),
