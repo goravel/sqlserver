@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/sqlserver/contracts"
+	"github.com/jmoiron/sqlx"
 	"gorm.io/gorm"
 )
 
@@ -48,10 +49,24 @@ func (r *Sqlserver) Config() database.Config {
 	}
 }
 
+func (r *Sqlserver) DB() (*sqlx.DB, error) {
+	gormDB, _, err := r.Gorm()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := gormDB.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlx.NewDb(db, Name), nil
+}
+
 func (r *Sqlserver) Docker() (docker.DatabaseDriver, error) {
 	writers := r.config.Writes()
 	if len(writers) == 0 {
-		return nil, errors.OrmDatabaseConfigNotFound
+		return nil, errors.DatabaseConfigNotFound
 	}
 
 	return NewDocker(r.config, writers[0].Database, writers[0].Username, writers[0].Password), nil
