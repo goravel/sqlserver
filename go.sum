@@ -66,6 +66,8 @@ github.com/goravel/framework v1.15.2-0.20250207105840-b8242bc2a853 h1:YXeM98oAlu
 github.com/goravel/framework v1.15.2-0.20250207105840-b8242bc2a853/go.mod h1:5Il8ODw11sGkktLaEi1cKHIoI9P//wdcLSGjHGUsK58=
 github.com/goravel/framework v1.15.2-0.20250209050736-c63da33a6ac2 h1:BSmCZmyQtJ7jFeVCcexQiSBC9o/tyhDNZsuO23e2pz8=
 github.com/goravel/framework v1.15.2-0.20250209050736-c63da33a6ac2/go.mod h1:msPmnGdCt7226/Mw48qh/0iExOT/r6rlpzUhIzfTAfA=
+github.com/goravel/framework v1.15.2-0.20250210073917-7edffd9b4390 h1:B73mifdcXKESRC+JVx6xFavNCs1CN0S9VmlYYRDxsII=
+github.com/goravel/framework v1.15.2-0.20250210073917-7edffd9b4390/go.mod h1:msPmnGdCt7226/Mw48qh/0iExOT/r6rlpzUhIzfTAfA=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
 github.com/hashicorp/go-uuid v1.0.2/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
