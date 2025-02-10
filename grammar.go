@@ -310,6 +310,10 @@ func (r *Grammar) CompileTables(_ string) string {
 		"order by t.name"
 }
 
+func (r *Grammar) CompileTableComment(_ contractsschema.Blueprint, _ *contractsschema.Command) string {
+	return ""
+}
+
 func (r *Grammar) CompileTypes() string {
 	return ""
 }
