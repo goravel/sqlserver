@@ -1,8 +1,10 @@
 package sqlserver
 
 import (
+	"database/sql"
 	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/driver"
@@ -11,7 +13,6 @@ import (
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/sqlserver/contracts"
-	"github.com/jmoiron/sqlx"
 	"gorm.io/gorm"
 )
 
@@ -37,30 +38,26 @@ func (r *Sqlserver) Config() database.Config {
 	}
 
 	return database.Config{
-		Connection: writers[0].Connection,
-		Database:   writers[0].Database,
-		Driver:     Name,
-		Host:       writers[0].Host,
-		Password:   writers[0].Password,
-		Port:       writers[0].Port,
-		Prefix:     writers[0].Prefix,
-		Username:   writers[0].Username,
-		Version:    r.version(),
+		Connection:        writers[0].Connection,
+		Database:          writers[0].Database,
+		Driver:            Name,
+		Host:              writers[0].Host,
+		Password:          writers[0].Password,
+		Port:              writers[0].Port,
+		Prefix:            writers[0].Prefix,
+		Username:          writers[0].Username,
+		Version:           r.version(),
+		PlaceholderFormat: sq.AtP,
 	}
 }
 
-func (r *Sqlserver) DB() (*sqlx.DB, error) {
+func (r *Sqlserver) DB() (*sql.DB, error) {
 	gormDB, _, err := r.Gorm()
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := gormDB.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	return sqlx.NewDb(db, Name), nil
+	return gormDB.DB()
 }
 
 func (r *Sqlserver) Docker() (docker.DatabaseDriver, error) {
