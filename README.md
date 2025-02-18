@@ -50,7 +50,7 @@ import (
         "prefix":   "",
         "singular": false,
         "via": func() (driver.Driver, error) {
-            return sqlserverfacades.Sqlserver("sqlserver"), nil
+            return sqlserverfacades.Sqlserver("sqlserver")
         },
         // Optional
         "read": []contracts.Config{
