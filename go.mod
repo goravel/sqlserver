@@ -4,6 +4,8 @@ go 1.23.0
 
 toolchain go1.23.4
 
+godebug x509negativeserial=1
+
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/goravel/framework v1.15.2-0.20250227083336-e26aa18348c4
