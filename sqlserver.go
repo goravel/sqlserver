@@ -20,9 +20,10 @@ import (
 var _ driver.Driver = &Sqlserver{}
 
 type Sqlserver struct {
-	config contracts.ConfigBuilder
-	db     *gorm.DB
-	log    log.Log
+	config  contracts.ConfigBuilder
+	db      *gorm.DB
+	log     log.Log
+	version string
 }
 
 func NewSqlserver(config config.Config, log log.Log, connection string) *Sqlserver {
@@ -48,7 +49,7 @@ func (r *Sqlserver) Config() database.Config {
 		Port:              writers[0].Port,
 		Prefix:            writers[0].Prefix,
 		Username:          writers[0].Username,
-		Version:           r.version(),
+		Version:           r.getVersion(),
 		PlaceholderFormat: sq.AtP,
 	}
 }
@@ -98,7 +99,11 @@ func (r *Sqlserver) Processor() contractsschema.Processor {
 	return NewProcessor()
 }
 
-func (r *Sqlserver) version() string {
+func (r *Sqlserver) getVersion() string {
+	if r.version != "" {
+		return r.version
+	}
+
 	instance, _, err := r.Gorm()
 	if err != nil {
 		return ""
@@ -111,5 +116,7 @@ func (r *Sqlserver) version() string {
 		return fmt.Sprintf("UNKNOWN: %s", err)
 	}
 
-	return version.Value
+	r.version = version.Value
+
+	return r.version
 }
