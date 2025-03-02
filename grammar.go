@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/spf13/cast"
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
@@ -275,6 +276,22 @@ func (r *Grammar) CompileIndexes(_, table string) (string, error) {
 		r.wrap.Quote(table),
 		newSchema,
 	), nil
+}
+
+func (r *Grammar) CompileLimit(builder sq.SelectBuilder, limit uint64) sq.SelectBuilder {
+	return builder.Suffix("FETCH NEXT ? ROWS ONLY", limit)
+}
+
+func (r *Grammar) CompileOffset(builder sq.SelectBuilder, offset uint64) sq.SelectBuilder {
+	return builder.Suffix("OFFSET ? ROWS", offset)
+}
+
+func (r *Grammar) CompileOrderBy(builder sq.SelectBuilder, raw []string) sq.SelectBuilder {
+	if len(raw) > 0 {
+		builder = builder.OrderBy(raw...)
+	}
+
+	return builder
 }
 
 func (r *Grammar) CompilePrimary(blueprint contractsschema.Blueprint, command *contractsschema.Command) string {
