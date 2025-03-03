@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/spf13/cast"
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
@@ -278,21 +277,32 @@ func (r *Grammar) CompileIndexes(_, table string) (string, error) {
 	), nil
 }
 
-func (r *Grammar) CompileLimit(builder sq.SelectBuilder, limit uint64) sq.SelectBuilder {
-	return builder.Suffix("FETCH NEXT ? ROWS ONLY", limit)
-}
+// func (r *Grammar) CompileLimit(builder sq.SelectBuilder, conditions db.Conditions) sq.SelectBuilder {
+// 	if conditions.Limit == nil {
+// 		return builder
+// 	}
 
-func (r *Grammar) CompileOffset(builder sq.SelectBuilder, offset uint64) sq.SelectBuilder {
-	return builder.Suffix("OFFSET ? ROWS", offset)
-}
+// 	return builder.Suffix("FETCH NEXT ? ROWS ONLY", *conditions.Limit)
+// }
 
-func (r *Grammar) CompileOrderBy(builder sq.SelectBuilder, raw []string) sq.SelectBuilder {
-	if len(raw) > 0 {
-		builder = builder.OrderBy(raw...)
-	}
+// func (r *Grammar) CompileOffset(builder sq.SelectBuilder, conditions db.Conditions) sq.SelectBuilder {
+// 	if conditions.Offset == nil && conditions.Limit != nil {
+// 		conditions.Offset = convert.Pointer[uint64](0)
+// 	}
+// 	if conditions.Offset != nil {
+// 		builder = builder.Suffix("OFFSET ? ROWS", *conditions.Offset)
+// 	}
 
-	return builder
-}
+// 	return builder
+// }
+
+// func (r *Grammar) CompileOrderBy(builder sq.SelectBuilder, conditions db.Conditions) sq.SelectBuilder {
+// 	if len(conditions.OrderBy) == 0 && conditions.Limit != nil {
+// 		builder = builder.OrderBy("(select 0)")
+// 	}
+
+// 	return builder.OrderBy(conditions.OrderBy...)
+// }
 
 func (r *Grammar) CompilePrimary(blueprint contractsschema.Blueprint, command *contractsschema.Command) string {
 	return fmt.Sprintf("alter table %s add constraint %s primary key (%s)",
