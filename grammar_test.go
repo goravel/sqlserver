@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/driver"
-	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/errors"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
@@ -144,7 +143,7 @@ func (s *GrammarSuite) TestCompileCreate() {
 	// grammar.go::CompileCreate
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 	// utils.go::getColumns
-	mockBlueprint.EXPECT().GetAddedColumns().Return([]contractsdriver.ColumnDefinition{
+	mockBlueprint.EXPECT().GetAddedColumns().Return([]driver.ColumnDefinition{
 		mockColumn1, mockColumn2,
 	}).Once()
 	// utils.go::getColumns
@@ -332,7 +331,7 @@ func (s *GrammarSuite) TestGetColumns() {
 	mockColumn2 := mocksdriver.NewColumnDefinition(s.T())
 	mockBlueprint := mocksdriver.NewBlueprint(s.T())
 
-	mockBlueprint.EXPECT().GetAddedColumns().Return([]contractsdriver.ColumnDefinition{
+	mockBlueprint.EXPECT().GetAddedColumns().Return([]driver.ColumnDefinition{
 		mockColumn1, mockColumn2,
 	}).Once()
 	mockBlueprint.EXPECT().HasCommand("primary").Return(false).Once()

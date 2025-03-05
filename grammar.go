@@ -290,7 +290,7 @@ func (r *Grammar) CompileOffset(builder sq.SelectBuilder, conditions driver.Cond
 	if conditions.Offset == nil && conditions.Limit != nil {
 		conditions.Offset = convert.Pointer[uint64](0)
 	}
-	if conditions.Offset != nil {
+	if conditions.Offset != nil && conditions.Limit != nil {
 		builder = builder.Suffix("OFFSET ? ROWS", *conditions.Offset)
 	}
 

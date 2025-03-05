@@ -4,11 +4,9 @@ go 1.23.0
 
 toolchain go1.23.4
 
-godebug x509negativeserial=1
-
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/goravel/framework v1.15.2-0.20250305091351-dfecd6c9f24b
+	github.com/goravel/framework v1.15.2-0.20250305111148-66b7b7136dc7
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/driver/sqlserver v1.5.4
