@@ -8,7 +8,6 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/driver"
-	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
@@ -91,11 +90,11 @@ func (r *Sqlserver) Gorm() (*gorm.DB, driver.GormQuery, error) {
 	return db, NewQuery(), nil
 }
 
-func (r *Sqlserver) Grammar() contractsschema.Grammar {
+func (r *Sqlserver) Grammar() driver.Grammar {
 	return NewGrammar(r.config.Writes()[0].Prefix)
 }
 
-func (r *Sqlserver) Processor() contractsschema.Processor {
+func (r *Sqlserver) Processor() driver.Processor {
 	return NewProcessor()
 }
 
