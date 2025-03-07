@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/convert"
 	"github.com/spf13/cast"
+	"gorm.io/gorm/clause"
 )
 
 var _ driver.Grammar = &Grammar{}
@@ -278,7 +279,7 @@ func (r *Grammar) CompileIndexes(_, table string) (string, error) {
 	), nil
 }
 
-func (r *Grammar) CompileLimit(builder sq.SelectBuilder, conditions driver.Conditions) sq.SelectBuilder {
+func (r *Grammar) CompileLimit(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 	if conditions.Limit == nil {
 		return builder
 	}
@@ -286,7 +287,19 @@ func (r *Grammar) CompileLimit(builder sq.SelectBuilder, conditions driver.Condi
 	return builder.Suffix("FETCH NEXT ? ROWS ONLY", *conditions.Limit)
 }
 
-func (r *Grammar) CompileOffset(builder sq.SelectBuilder, conditions driver.Conditions) sq.SelectBuilder {
+func (r *Grammar) CompileLockForUpdate(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+	if conditions.LockForUpdate != nil && *conditions.LockForUpdate {
+		builder = builder.From(conditions.Table + " WITH (ROWLOCK, UPDLOCK, HOLDLOCK)")
+	}
+
+	return builder
+}
+
+func (r *Grammar) ComplieLockForUpdateForGorm() clause.Expression {
+	return With("rowlock", "updlock", "holdlock")
+}
+
+func (r *Grammar) CompileOffset(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 	if conditions.Offset == nil && conditions.Limit != nil {
 		conditions.Offset = convert.Pointer[uint64](0)
 	}
@@ -297,7 +310,7 @@ func (r *Grammar) CompileOffset(builder sq.SelectBuilder, conditions driver.Cond
 	return builder
 }
 
-func (r *Grammar) CompileOrderBy(builder sq.SelectBuilder, conditions driver.Conditions) sq.SelectBuilder {
+func (r *Grammar) CompileOrderBy(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 	if len(conditions.OrderBy) == 0 && conditions.Limit != nil {
 		builder = builder.OrderBy("(select 0)")
 	}
@@ -310,6 +323,10 @@ func (r *Grammar) CompilePrimary(blueprint driver.Blueprint, command *driver.Com
 		r.wrap.Table(blueprint.GetTableName()),
 		r.wrap.Column(command.Index),
 		r.wrap.Columnize(command.Columns))
+}
+
+func (r *Grammar) CompileRandomOrderForGorm() string {
+	return "NEWID()"
 }
 
 func (r *Grammar) CompileRename(blueprint driver.Blueprint, command *driver.Command) string {
@@ -327,6 +344,10 @@ func (r *Grammar) CompileRenameIndex(_ driver.Schema, blueprint driver.Blueprint
 	return []string{
 		fmt.Sprintf("sp_rename %s, %s, N'INDEX'", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)), r.wrap.Column(command.To)),
 	}
+}
+
+func (r *Grammar) CompileSharedLockForGorm() clause.Expression {
+	return With("rowlock", "holdlock")
 }
 
 func (r *Grammar) CompileTables(_ string) string {
