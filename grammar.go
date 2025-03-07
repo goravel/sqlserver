@@ -295,8 +295,8 @@ func (r *Grammar) CompileLockForUpdate(builder sq.SelectBuilder, conditions *dri
 	return builder
 }
 
-func (r *Grammar) ComplieLockForUpdateForGorm() clause.Expression {
-	return With("rowlock", "updlock", "holdlock")
+func (r *Grammar) CompileLockForUpdateForGorm() clause.Expression {
+	return With("ROWLOCK", "UPDLOCK", "HOLDLOCK")
 }
 
 func (r *Grammar) CompileOffset(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
@@ -325,6 +325,14 @@ func (r *Grammar) CompilePrimary(blueprint driver.Blueprint, command *driver.Com
 		r.wrap.Columnize(command.Columns))
 }
 
+func (r *Grammar) CompileInRandomOrder(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+	if conditions.InRandomOrder != nil && *conditions.InRandomOrder {
+		conditions.OrderBy = []string{"NEWID()"}
+	}
+
+	return builder
+}
+
 func (r *Grammar) CompileRandomOrderForGorm() string {
 	return "NEWID()"
 }
@@ -346,8 +354,16 @@ func (r *Grammar) CompileRenameIndex(_ driver.Schema, blueprint driver.Blueprint
 	}
 }
 
+func (r *Grammar) CompileSharedLock(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
+	if conditions.LockForUpdate != nil && *conditions.LockForUpdate {
+		builder = builder.From(conditions.Table + " WITH (ROWLOCK, HOLDLOCK)")
+	}
+
+	return builder
+}
+
 func (r *Grammar) CompileSharedLockForGorm() clause.Expression {
-	return With("rowlock", "holdlock")
+	return With("ROWLOCK", "HOLDLOCK")
 }
 
 func (r *Grammar) CompileTables(_ string) string {
