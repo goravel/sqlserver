@@ -166,16 +166,13 @@ func (r *Docker) connect() (*gormio.DB, error) {
 					return nil, err
 				}
 
-				query = fmt.Sprintf("SELECT 1 FROM sys.server_principals WHERE name = '%s' AND type = 'S'", r.username)
-				if err := instance.Raw(query).Scan(&exists).Error; err != nil {
+				if err := instance.Exec(fmt.Sprintf(`
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = '%s' AND type = 'S')
+BEGIN
+    CREATE LOGIN %s WITH PASSWORD = '%s';
+END
+				`, r.username, r.username, r.password)).Error; err != nil {
 					return nil, err
-				}
-
-				if !exists {
-					// Create User account
-					if err := instance.Exec(fmt.Sprintf("CREATE LOGIN %s WITH PASSWORD = '%s'", r.username, r.password)).Error; err != nil {
-						return nil, err
-					}
 				}
 
 				// Create DB account for User
