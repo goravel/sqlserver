@@ -341,14 +341,14 @@ func (r *Grammar) CompileRename(blueprint driver.Blueprint, command *driver.Comm
 	return fmt.Sprintf("sp_rename %s, %s", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())), r.wrap.Table(command.To))
 }
 
-func (r *Grammar) CompileRenameColumn(_ driver.Schema, blueprint driver.Blueprint, command *driver.Command) (string, error) {
+func (r *Grammar) CompileRenameColumn(blueprint driver.Blueprint, command *driver.Command, _ []driver.Column) (string, error) {
 	return fmt.Sprintf("sp_rename %s, %s, N'COLUMN'",
 		r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)),
 		r.wrap.Column(command.To),
 	), nil
 }
 
-func (r *Grammar) CompileRenameIndex(_ driver.Schema, blueprint driver.Blueprint, command *driver.Command) []string {
+func (r *Grammar) CompileRenameIndex(blueprint driver.Blueprint, command *driver.Command, _ []driver.Index) []string {
 	return []string{
 		fmt.Sprintf("sp_rename %s, %s, N'INDEX'", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)), r.wrap.Column(command.To)),
 	}
