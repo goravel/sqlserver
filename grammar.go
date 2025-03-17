@@ -318,6 +318,10 @@ func (r *Grammar) CompileOrderBy(builder sq.SelectBuilder, conditions *driver.Co
 	return builder.OrderBy(conditions.OrderBy...)
 }
 
+func (r *Grammar) CompilePlaceholderFormat() driver.PlaceholderFormat {
+	return sq.AtP
+}
+
 func (r *Grammar) CompilePrimary(blueprint driver.Blueprint, command *driver.Command) string {
 	return fmt.Sprintf("alter table %s add constraint %s primary key (%s)",
 		r.wrap.Table(blueprint.GetTableName()),
@@ -388,6 +392,10 @@ func (r *Grammar) CompileUnique(blueprint driver.Blueprint, command *driver.Comm
 		r.wrap.Column(command.Index),
 		r.wrap.Table(blueprint.GetTableName()),
 		r.wrap.Columnize(command.Columns))
+}
+
+func (r *Grammar) CompileVersion() string {
+	return "SELECT SERVERPROPERTY('productversion') AS value;"
 }
 
 func (r *Grammar) CompileViews(_ string) string {
