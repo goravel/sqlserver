@@ -17,10 +17,8 @@ import (
 var _ driver.Driver = &Sqlserver{}
 
 type Sqlserver struct {
-	config  contracts.ConfigBuilder
-	db      *gorm.DB
-	log     log.Log
-	version string
+	config contracts.ConfigBuilder
+	log    log.Log
 }
 
 func NewSqlserver(config config.Config, log log.Log, connection string) *Sqlserver {
