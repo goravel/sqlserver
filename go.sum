@@ -63,8 +63,8 @@ github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/google/uuid v1.5.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/goravel/framework v1.15.2-0.20250309092812-0d45fdd3fb26 h1:/Z6BtVCDoCdra+xW7FGIk4PFWli0vOiXryr37n2iI6Y=
-github.com/goravel/framework v1.15.2-0.20250309092812-0d45fdd3fb26/go.mod h1:WaPeuuviQKql/S8HSNk+ZK3xukJsw++h1G74CjbEnmk=
+github.com/goravel/framework v1.15.2-0.20250318091829-9dd41c701f8b h1:QFlCojm4qVFAo4uJLg+3UYMqcfpgA5O+MPNUNUR6ptg=
+github.com/goravel/framework v1.15.2-0.20250318091829-9dd41c701f8b/go.mod h1:4/o8Z+6f2QyQANqfRRxh8DQgVkgXxM/JJa5FFG0GptQ=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
 github.com/hashicorp/go-uuid v1.0.2/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
