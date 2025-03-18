@@ -1,10 +1,8 @@
 package sqlserver
 
 import (
-	"database/sql"
 	"fmt"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/driver"
@@ -19,10 +17,8 @@ import (
 var _ driver.Driver = &Sqlserver{}
 
 type Sqlserver struct {
-	config  contracts.ConfigBuilder
-	db      *gorm.DB
-	log     log.Log
-	version string
+	config contracts.ConfigBuilder
+	log    log.Log
 }
 
 func NewSqlserver(config config.Config, log log.Log, connection string) *Sqlserver {
@@ -32,38 +28,8 @@ func NewSqlserver(config config.Config, log log.Log, connection string) *Sqlserv
 	}
 }
 
-func (r *Sqlserver) Config() database.Config {
-	writers := r.config.Writes()
-	if len(writers) == 0 {
-		return database.Config{}
-	}
-
-	return database.Config{
-		Connection:        writers[0].Connection,
-		Dsn:               writers[0].Dsn,
-		Database:          writers[0].Database,
-		Driver:            Name,
-		Host:              writers[0].Host,
-		Password:          writers[0].Password,
-		Port:              writers[0].Port,
-		Prefix:            writers[0].Prefix,
-		Username:          writers[0].Username,
-		Version:           r.getVersion(),
-		PlaceholderFormat: sq.AtP,
-	}
-}
-
-func (r *Sqlserver) DB() (*sql.DB, error) {
-	gormDB, err := r.Gorm()
-	if err != nil {
-		return nil, err
-	}
-
-	return gormDB.DB()
-}
-
 func (r *Sqlserver) Docker() (docker.DatabaseDriver, error) {
-	writers := r.config.Writes()
+	writers := r.config.Writers()
 	if len(writers) == 0 {
 		return nil, errors.DatabaseConfigNotFound
 	}
@@ -71,51 +37,64 @@ func (r *Sqlserver) Docker() (docker.DatabaseDriver, error) {
 	return NewDocker(r.config, writers[0].Database, writers[0].Username, writers[0].Password), nil
 }
 
-func (r *Sqlserver) Explain(sql string, vars ...any) string {
-	return sqlserver.New(sqlserver.Config{}).Explain(sql, vars...)
-}
-
-func (r *Sqlserver) Gorm() (*gorm.DB, error) {
-	if r.db != nil {
-		return r.db, nil
-	}
-
-	db, err := NewGorm(r.config, r.log).Build()
-	if err != nil {
-		return nil, err
-	}
-
-	r.db = db
-
-	return db, nil
-}
-
 func (r *Sqlserver) Grammar() driver.Grammar {
-	return NewGrammar(r.config.Writes()[0].Prefix)
+	return NewGrammar(r.config.Writers()[0].Prefix)
+}
+
+func (r *Sqlserver) Pool() database.Pool {
+	return database.Pool{
+		Readers: r.fullConfigsToConfigs(r.config.Readers()),
+		Writers: r.fullConfigsToConfigs(r.config.Writers()),
+	}
 }
 
 func (r *Sqlserver) Processor() driver.Processor {
 	return NewProcessor()
 }
 
-func (r *Sqlserver) getVersion() string {
-	if r.version != "" {
-		return r.version
+func (r *Sqlserver) fullConfigsToConfigs(fullConfigs []contracts.FullConfig) []database.Config {
+	configs := make([]database.Config, len(fullConfigs))
+	for i, fullConfig := range fullConfigs {
+		configs[i] = database.Config{
+			Charset:      fullConfig.Charset,
+			Connection:   fullConfig.Connection,
+			Dsn:          fullConfig.Dsn,
+			Database:     fullConfig.Database,
+			Dialector:    fullConfigToDialector(fullConfig),
+			Driver:       Name,
+			Host:         fullConfig.Host,
+			NameReplacer: fullConfig.NameReplacer,
+			NoLowerCase:  fullConfig.NoLowerCase,
+			Password:     fullConfig.Password,
+			Port:         fullConfig.Port,
+			Prefix:       fullConfig.Prefix,
+			Singular:     fullConfig.Singular,
+			Username:     fullConfig.Username,
+		}
 	}
 
-	instance, err := r.Gorm()
-	if err != nil {
+	return configs
+}
+
+func dsn(fullConfig contracts.FullConfig) string {
+	if fullConfig.Dsn != "" {
+		return fullConfig.Dsn
+	}
+	if fullConfig.Host == "" {
 		return ""
 	}
 
-	var version struct {
-		Value string
-	}
-	if err := instance.Raw("SELECT SERVERPROPERTY('productversion') AS value;").Scan(&version).Error; err != nil {
-		r.version = fmt.Sprintf("UNKNOWN: %s", err)
-	} else {
-		r.version = version.Value
+	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
+		fullConfig.Username, fullConfig.Password, fullConfig.Host, fullConfig.Port, fullConfig.Database, fullConfig.Charset)
+}
+
+func fullConfigToDialector(fullConfig contracts.FullConfig) gorm.Dialector {
+	dsn := dsn(fullConfig)
+	if dsn == "" {
+		return nil
 	}
 
-	return r.version
+	return sqlserver.New(sqlserver.Config{
+		DSN: dsn,
+	})
 }
