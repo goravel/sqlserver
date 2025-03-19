@@ -53,10 +53,10 @@ import (
             return sqlserverfacades.Sqlserver("sqlserver")
         },
         // Optional
+        "dsn": "",
         "read": []contracts.Config{
             {Host: "192.168.1.1", Port: 3306, Database: "forge", Username: "root", Password: "123123"},
         },
-        // Optional
         "write": []contracts.Config{
             {Host: "192.168.1.2", Port: 3306, Database: "forge", Username: "root", Password: "123123"},
         },
