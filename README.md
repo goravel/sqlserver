@@ -63,3 +63,13 @@ import (
     },
 }
 ```
+
+## Schema
+
+If you want to specify a `schema`, you can add the `schema` in the `TableName` function of the model.
+
+```go
+func (r *User) TableName() string {
+  return "goravel.users"
+}
+```
