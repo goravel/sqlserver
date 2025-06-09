@@ -2,11 +2,14 @@ package sqlserver
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
+	supportdocker "github.com/goravel/framework/support/docker"
 	testingdocker "github.com/goravel/framework/testing/docker"
 	"github.com/goravel/sqlserver/contracts"
+	"github.com/spf13/cast"
 	"gorm.io/driver/sqlserver"
 	gormio "gorm.io/gorm"
 )
@@ -47,7 +50,7 @@ func (r *Docker) Build() error {
 
 	config := r.imageDriver.Config()
 	r.databaseConfig.ContainerID = config.ContainerID
-	r.databaseConfig.Port = config.ExposedPorts[r.databaseConfig.Port]
+	r.databaseConfig.Port = cast.ToInt(supportdocker.ExposedPort(config.ExposedPorts, strconv.Itoa(r.databaseConfig.Port)))
 
 	return nil
 }
