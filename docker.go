@@ -5,32 +5,30 @@ import (
 	"time"
 
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
-	"github.com/goravel/framework/support/docker"
-	"github.com/goravel/framework/support/process"
+	testingdocker "github.com/goravel/framework/testing/docker"
 	"github.com/goravel/sqlserver/contracts"
 	"gorm.io/driver/sqlserver"
 	gormio "gorm.io/gorm"
 )
 
 type Docker struct {
-	config      contracts.ConfigBuilder
-	containerID string
-	database    string
-	host        string
-	image       *contractsdocker.Image
-	password    string
-	username    string
-	port        int
+	config         contracts.ConfigBuilder
+	databaseConfig contractsdocker.DatabaseConfig
+	imageDriver    contractsdocker.ImageDriver
 }
 
 func NewDocker(config contracts.ConfigBuilder, database, username, password string) *Docker {
 	return &Docker{
-		config:   config,
-		database: database,
-		host:     "127.0.0.1",
-		username: username,
-		password: password,
-		image: &contractsdocker.Image{
+		config: config,
+		databaseConfig: contractsdocker.DatabaseConfig{
+			Database: database,
+			Driver:   Name,
+			Host:     "127.0.0.1",
+			Password: password,
+			Port:     1433,
+			Username: username,
+		},
+		imageDriver: testingdocker.NewImageDriver(contractsdocker.Image{
 			Repository: "mcr.microsoft.com/mssql/server",
 			Tag:        "latest",
 			Env: []string{
@@ -38,42 +36,30 @@ func NewDocker(config contracts.ConfigBuilder, database, username, password stri
 				"MSSQL_SA_PASSWORD=" + password,
 			},
 			ExposedPorts: []string{"1433"},
-		},
+		}),
 	}
 }
 
 func (r *Docker) Build() error {
-	command, exposedPorts := docker.ImageToCommand(r.image)
-	containerID, err := process.Run(command)
-	if err != nil {
-		return fmt.Errorf("init Sqlserver error: %v", err)
-	}
-	if containerID == "" {
-		return fmt.Errorf("no container id return when creating Sqlserver docker")
+	if err := r.imageDriver.Build(); err != nil {
+		return err
 	}
 
-	r.containerID = containerID
-	r.port = docker.ExposedPort(exposedPorts, 1433)
+	config := r.imageDriver.Config()
+	r.databaseConfig.ContainerID = config.ContainerID
+	r.databaseConfig.Port = config.ExposedPorts[r.databaseConfig.Port]
 
 	return nil
 }
 
 func (r *Docker) Config() contractsdocker.DatabaseConfig {
-	return contractsdocker.DatabaseConfig{
-		ContainerID: r.containerID,
-		Driver:      Name,
-		Host:        r.host,
-		Port:        r.port,
-		Database:    r.database,
-		Username:    r.username,
-		Password:    r.password,
-	}
+	return r.databaseConfig
 }
 
 func (r *Docker) Database(name string) (contractsdocker.DatabaseDriver, error) {
-	docker := NewDocker(r.config, name, r.username, r.password)
-	docker.containerID = r.containerID
-	docker.port = r.port
+	docker := NewDocker(r.config, name, r.databaseConfig.Username, r.databaseConfig.Password)
+	docker.databaseConfig.ContainerID = r.databaseConfig.ContainerID
+	docker.databaseConfig.Port = r.databaseConfig.Port
 
 	return docker, nil
 }
@@ -110,7 +96,7 @@ func (r *Docker) Fresh() error {
 }
 
 func (r *Docker) Image(image contractsdocker.Image) {
-	r.image = &image
+	r.imageDriver = testingdocker.NewImageDriver(image)
 }
 
 func (r *Docker) Ready() error {
@@ -125,18 +111,14 @@ func (r *Docker) Ready() error {
 }
 
 func (r *Docker) Reuse(containerID string, port int) error {
-	r.containerID = containerID
-	r.port = port
+	r.databaseConfig.ContainerID = containerID
+	r.databaseConfig.Port = port
 
 	return nil
 }
 
 func (r *Docker) Shutdown() error {
-	if _, err := process.Run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
-		return fmt.Errorf("stop Sqlserver error: %v", err)
-	}
-
-	return nil
+	return r.imageDriver.Shutdown()
 }
 
 func (r *Docker) connect() (*gormio.DB, error) {
@@ -149,20 +131,20 @@ func (r *Docker) connect() (*gormio.DB, error) {
 	for i := 0; i < 100; i++ {
 		instance, err = gormio.Open(sqlserver.New(sqlserver.Config{
 			DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=master",
-				"sa", r.password, r.host, r.port),
+				"sa", r.databaseConfig.Password, r.databaseConfig.Host, r.databaseConfig.Port),
 		}))
 
 		if err == nil {
 			// Check if database exists
 			var exists bool
-			query := fmt.Sprintf("SELECT CASE WHEN EXISTS (SELECT * FROM sys.databases WHERE name = '%s') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END", r.database)
+			query := fmt.Sprintf("SELECT CASE WHEN EXISTS (SELECT * FROM sys.databases WHERE name = '%s') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END", r.databaseConfig.Database)
 			if err := instance.Raw(query).Scan(&exists).Error; err != nil {
 				return nil, err
 			}
 
 			if !exists {
 				// Create User database
-				if err := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, r.database)).Error; err != nil {
+				if err := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, r.databaseConfig.Database)).Error; err != nil {
 					return nil, err
 				}
 
@@ -171,24 +153,24 @@ IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = '%s' AND type = 
 BEGIN
     CREATE LOGIN %s WITH PASSWORD = '%s';
 END
-				`, r.username, r.username, r.password)).Error; err != nil {
+				`, r.databaseConfig.Username, r.databaseConfig.Username, r.databaseConfig.Password)).Error; err != nil {
 					return nil, err
 				}
 
 				// Create DB account for User
-				if err := instance.Exec(fmt.Sprintf("USE %s; CREATE USER %s FOR LOGIN %s", r.database, r.username, r.username)).Error; err != nil {
+				if err := instance.Exec(fmt.Sprintf("USE %s; CREATE USER %s FOR LOGIN %s", r.databaseConfig.Database, r.databaseConfig.Username, r.databaseConfig.Username)).Error; err != nil {
 					return nil, err
 				}
 
 				// Add permission
-				if err := instance.Exec(fmt.Sprintf("USE %s; ALTER ROLE db_owner ADD MEMBER %s", r.database, r.username)).Error; err != nil {
+				if err := instance.Exec(fmt.Sprintf("USE %s; ALTER ROLE db_owner ADD MEMBER %s", r.databaseConfig.Database, r.databaseConfig.Username)).Error; err != nil {
 					return nil, err
 				}
 			}
 
 			instance, err = gormio.Open(sqlserver.New(sqlserver.Config{
 				DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s",
-					r.username, r.password, r.host, r.port, r.database),
+					r.databaseConfig.Username, r.databaseConfig.Password, r.databaseConfig.Host, r.databaseConfig.Port, r.databaseConfig.Database),
 			}))
 
 			break
@@ -212,11 +194,11 @@ func (r *Docker) close(gormDB *gormio.DB) error {
 func (r *Docker) resetConfigPort() {
 	writers := r.config.Config().Get(fmt.Sprintf("database.connections.%s.write", r.config.Connection()))
 	if writeConfigs, ok := writers.([]contracts.Config); ok {
-		writeConfigs[0].Port = r.port
+		writeConfigs[0].Port = r.databaseConfig.Port
 		r.config.Config().Add(fmt.Sprintf("database.connections.%s.write", r.config.Connection()), writeConfigs)
 
 		return
 	}
 
-	r.config.Config().Add(fmt.Sprintf("database.connections.%s.port", r.config.Connection()), r.port)
+	r.config.Config().Add(fmt.Sprintf("database.connections.%s.port", r.config.Connection()), r.databaseConfig.Port)
 }

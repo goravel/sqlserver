@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/mocks/config"
 	"github.com/goravel/sqlserver/contracts"
 	"github.com/stretchr/testify/suite"
@@ -100,16 +99,9 @@ func (s *DockerTestSuite) TestDatabase() {
 	s.Nil(s.docker.Shutdown())
 }
 
-func (s *DockerTestSuite) TestImage() {
-	image := docker.Image{
-		Repository: "sqlserver",
-	}
-	s.docker.Image(image)
-	s.Equal(&image, s.docker.image)
-}
-
 func (s *DockerTestSuite) TestReady() {
 	s.Run("config contains write config", func() {
+		s.SetupTest()
 		s.Nil(s.docker.Build())
 
 		s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", s.connection)).Return([]contracts.Config{
@@ -120,7 +112,7 @@ func (s *DockerTestSuite) TestReady() {
 		s.mockConfig.EXPECT().Add(fmt.Sprintf("database.connections.%s.write", s.connection), []contracts.Config{
 			{
 				Host: "127.0.0.1",
-				Port: s.docker.port,
+				Port: s.docker.databaseConfig.Port,
 			},
 		}).Once()
 
@@ -129,10 +121,11 @@ func (s *DockerTestSuite) TestReady() {
 	})
 
 	s.Run("config does not contain write config", func() {
+		s.SetupTest()
 		s.Nil(s.docker.Build())
 
 		s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", s.connection)).Return(nil).Once()
-		s.mockConfig.EXPECT().Add(fmt.Sprintf("database.connections.%s.port", s.connection), s.docker.port).Once()
+		s.mockConfig.EXPECT().Add(fmt.Sprintf("database.connections.%s.port", s.connection), s.docker.databaseConfig.Port).Once()
 
 		s.Nil(s.docker.Ready())
 		s.Nil(s.docker.Shutdown())
