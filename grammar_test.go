@@ -3,13 +3,12 @@ package sqlserver
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/errors"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type GrammarSuite struct {
@@ -296,6 +295,130 @@ func (s *GrammarSuite) TestCompileIndex() {
 
 			sql := s.grammar.CompileIndex(mockBlueprint, test.command)
 			s.Equal(test.expectSql, sql)
+		})
+	}
+}
+
+func (s *GrammarSuite) TestCompileJsonContains() {
+	tests := []struct {
+		name          string
+		column        string
+		value         any
+		isNot         bool
+		expectedSql   string
+		expectedValue []any
+	}{
+		{
+			name:          "single path with single value",
+			column:        "data->details",
+			value:         "value1",
+			expectedSql:   `? in (select [value] from openjson([data], '$."details"'))`,
+			expectedValue: []any{"value1"},
+		},
+		{
+			name:          "single path with multiple values",
+			column:        "data->details",
+			value:         []string{"value1", "value2"},
+			expectedSql:   `? in (select [value] from openjson([data], '$."details"')) AND ? in (select [value] from openjson([data], '$."details"'))`,
+			expectedValue: []any{"value1", "value2"},
+		},
+		{
+			name:          "nested path with single value",
+			column:        "data->details->subdetails[0]",
+			value:         "value1",
+			expectedSql:   `? in (select [value] from openjson([data], '$."details"."subdetails"[0]'))`,
+			expectedValue: []any{"value1"},
+		},
+		{
+			name:          "nested path with multiple values",
+			column:        "data->details[0]->subdetails",
+			value:         []string{"value1", "value2"},
+			expectedSql:   `? in (select [value] from openjson([data], '$."details"[0]."subdetails"')) AND ? in (select [value] from openjson([data], '$."details"[0]."subdetails"'))`,
+			expectedValue: []any{"value1", "value2"},
+		},
+		{
+			name:          "with is not condition",
+			column:        "data->details",
+			value:         "value1",
+			isNot:         true,
+			expectedSql:   `not ? in (select [value] from openjson([data], '$."details"'))`,
+			expectedValue: []any{"value1"},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			actualSql, actualValue, err := s.grammar.CompileJsonContains(tt.column, tt.value, tt.isNot)
+			s.Equal(tt.expectedSql, actualSql)
+			s.Equal(tt.expectedValue, actualValue)
+			s.NoError(err)
+		})
+	}
+}
+
+func (s *GrammarSuite) TestCompileJsonContainKey() {
+	tests := []struct {
+		name        string
+		column      string
+		isNot       bool
+		expectedSql string
+	}{
+		{
+			name:        "single path",
+			column:      "data->details",
+			expectedSql: `'details' in (select [key] from openjson([data]))`,
+		},
+		{
+			name:        "single path with is not",
+			column:      "data->details",
+			isNot:       true,
+			expectedSql: `not 'details' in (select [key] from openjson([data]))`,
+		},
+		{
+			name:        "nested path",
+			column:      "data->details->subdetails",
+			expectedSql: `'subdetails' in (select [key] from openjson([data], '$."details"'))`,
+		},
+		{
+			name:        "nested path with array index",
+			column:      "data->details[0]->subdetails",
+			expectedSql: `'subdetails' in (select [key] from openjson([data], '$."details"[0]'))`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.Equal(tt.expectedSql, s.grammar.CompileJsonContainsKey(tt.column, tt.isNot))
+		})
+	}
+}
+
+func (s *GrammarSuite) TestCompileJsonLength() {
+	tests := []struct {
+		name        string
+		column      string
+		expectedSql string
+	}{
+		{
+			name:        "single path",
+			column:      "data->details",
+			expectedSql: `(select count(*) from openjson([data], '$."details"'))`,
+		},
+		{
+			name:        "nested path",
+			column:      "data->details->subdetails",
+			expectedSql: `(select count(*) from openjson([data], '$."details"."subdetails"'))`,
+		},
+		{
+			name:        "nested path with array index",
+			column:      "data->details[0]->subdetails",
+			expectedSql: `(select count(*) from openjson([data], '$."details"[0]."subdetails"'))`,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.Equal(tt.expectedSql, s.grammar.CompileJsonLength(tt.column))
 		})
 	}
 }

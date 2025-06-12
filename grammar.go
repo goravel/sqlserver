@@ -2,6 +2,8 @@ package sqlserver
 
 import (
 	"fmt"
+	"reflect"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -31,6 +33,9 @@ func NewGrammar(prefix string) *Grammar {
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		wrap:              NewWrap(prefix),
 	}
+	grammar.wrap.SetValueWrapper(func(s string) string {
+		return "[" + strings.ReplaceAll(s, "]", "]]") + "]"
+	})
 	grammar.modifiers = []func(driver.Blueprint, driver.ColumnDefinition) string{
 		grammar.ModifyDefault,
 		grammar.ModifyIncrement,
@@ -277,6 +282,52 @@ func (r *Grammar) CompileIndexes(_, table string) (string, error) {
 		r.wrap.Quote(table),
 		newSchema,
 	), nil
+}
+
+func (r *Grammar) CompileJsonContains(column string, value any, isNot bool) (string, []any, error) {
+	field, path := r.wrap.JsonFieldAndPath(column)
+	query := r.wrap.Not(fmt.Sprintf("? in (select [value] from openjson(%s%s))", field, path), isNot)
+
+	if val := reflect.ValueOf(value); val.Kind() == reflect.Slice || val.Kind() == reflect.Array {
+		values := make([]any, val.Len())
+		queries := make([]string, val.Len())
+		for i := 0; i < val.Len(); i++ {
+			values[i] = val.Index(i).Interface()
+			queries[i] = query
+		}
+
+		return strings.Join(queries, " AND "), values, nil
+	}
+
+	return query, []any{value}, nil
+}
+
+func (r *Grammar) CompileJsonContainsKey(column string, isNot bool) string {
+	segments := strings.Split(column, "->")
+	lastSegment := segments[len(segments)-1]
+	segments = segments[:len(segments)-1]
+
+	key := "'" + strings.ReplaceAll(lastSegment, "'", "''") + "'"
+	if matches := regexp.MustCompile(`\[([0-9]+)]$`).FindStringSubmatch(lastSegment); len(matches) == 2 {
+		segments = append(segments, strings.TrimSuffix(lastSegment, matches[0]))
+		key = matches[1]
+	}
+
+	field, path := r.wrap.JsonFieldAndPath(strings.Join(segments, "->"))
+
+	return r.wrap.Not(fmt.Sprintf("%s in (select [key] from openjson(%s%s))", key, field, path), isNot)
+}
+
+func (r *Grammar) CompileJsonLength(column string) string {
+	field, path := r.wrap.JsonFieldAndPath(column)
+
+	return fmt.Sprintf("(select count(*) from openjson(%s%s))", field, path)
+}
+
+func (r *Grammar) CompileJsonSelector(column string) string {
+	field, path := r.wrap.JsonFieldAndPath(column)
+
+	return fmt.Sprintf("json_value(%s%s)", field, path)
 }
 
 func (r *Grammar) CompileLimit(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
