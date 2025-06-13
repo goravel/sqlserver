@@ -33,9 +33,6 @@ func NewGrammar(prefix string) *Grammar {
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		wrap:              NewWrap(prefix),
 	}
-	grammar.wrap.SetValueWrapper(func(s string) string {
-		return "[" + strings.ReplaceAll(s, "]", "]]") + "]"
-	})
 	grammar.modifiers = []func(driver.Blueprint, driver.ColumnDefinition) string{
 		grammar.ModifyDefault,
 		grammar.ModifyIncrement,
@@ -286,7 +283,7 @@ func (r *Grammar) CompileIndexes(_, table string) (string, error) {
 
 func (r *Grammar) CompileJsonContains(column string, value any, isNot bool) (string, []any, error) {
 	field, path := r.wrap.JsonFieldAndPath(column)
-	query := r.wrap.Not(fmt.Sprintf("? in (select [value] from openjson(%s%s))", field, path), isNot)
+	query := r.wrap.Not(fmt.Sprintf(`? in (select "value" from openjson(%s%s))`, field, path), isNot)
 
 	if val := reflect.ValueOf(value); val.Kind() == reflect.Slice || val.Kind() == reflect.Array {
 		values := make([]any, val.Len())
@@ -315,7 +312,7 @@ func (r *Grammar) CompileJsonContainsKey(column string, isNot bool) string {
 
 	field, path := r.wrap.JsonFieldAndPath(strings.Join(segments, "->"))
 
-	return r.wrap.Not(fmt.Sprintf("%s in (select [key] from openjson(%s%s))", key, field, path), isNot)
+	return r.wrap.Not(fmt.Sprintf(`%s in (select "key" from openjson(%s%s))`, key, field, path), isNot)
 }
 
 func (r *Grammar) CompileJsonLength(column string) string {

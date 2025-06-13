@@ -312,28 +312,28 @@ func (s *GrammarSuite) TestCompileJsonContains() {
 			name:          "single path with single value",
 			column:        "data->details",
 			value:         "value1",
-			expectedSql:   `? in (select [value] from openjson([data], '$."details"'))`,
+			expectedSql:   `? in (select "value" from openjson("data", '$."details"'))`,
 			expectedValue: []any{"value1"},
 		},
 		{
 			name:          "single path with multiple values",
 			column:        "data->details",
 			value:         []string{"value1", "value2"},
-			expectedSql:   `? in (select [value] from openjson([data], '$."details"')) AND ? in (select [value] from openjson([data], '$."details"'))`,
+			expectedSql:   `? in (select "value" from openjson("data", '$."details"')) AND ? in (select "value" from openjson("data", '$."details"'))`,
 			expectedValue: []any{"value1", "value2"},
 		},
 		{
 			name:          "nested path with single value",
 			column:        "data->details->subdetails[0]",
 			value:         "value1",
-			expectedSql:   `? in (select [value] from openjson([data], '$."details"."subdetails"[0]'))`,
+			expectedSql:   `? in (select "value" from openjson("data", '$."details"."subdetails"[0]'))`,
 			expectedValue: []any{"value1"},
 		},
 		{
 			name:          "nested path with multiple values",
 			column:        "data->details[0]->subdetails",
 			value:         []string{"value1", "value2"},
-			expectedSql:   `? in (select [value] from openjson([data], '$."details"[0]."subdetails"')) AND ? in (select [value] from openjson([data], '$."details"[0]."subdetails"'))`,
+			expectedSql:   `? in (select "value" from openjson("data", '$."details"[0]."subdetails"')) AND ? in (select "value" from openjson("data", '$."details"[0]."subdetails"'))`,
 			expectedValue: []any{"value1", "value2"},
 		},
 		{
@@ -341,7 +341,7 @@ func (s *GrammarSuite) TestCompileJsonContains() {
 			column:        "data->details",
 			value:         "value1",
 			isNot:         true,
-			expectedSql:   `not ? in (select [value] from openjson([data], '$."details"'))`,
+			expectedSql:   `not ? in (select "value" from openjson("data", '$."details"'))`,
 			expectedValue: []any{"value1"},
 		},
 	}
@@ -366,23 +366,23 @@ func (s *GrammarSuite) TestCompileJsonContainKey() {
 		{
 			name:        "single path",
 			column:      "data->details",
-			expectedSql: `'details' in (select [key] from openjson([data]))`,
+			expectedSql: `'details' in (select "key" from openjson("data"))`,
 		},
 		{
 			name:        "single path with is not",
 			column:      "data->details",
 			isNot:       true,
-			expectedSql: `not 'details' in (select [key] from openjson([data]))`,
+			expectedSql: `not 'details' in (select "key" from openjson("data"))`,
 		},
 		{
 			name:        "nested path",
 			column:      "data->details->subdetails",
-			expectedSql: `'subdetails' in (select [key] from openjson([data], '$."details"'))`,
+			expectedSql: `'subdetails' in (select "key" from openjson("data", '$."details"'))`,
 		},
 		{
 			name:        "nested path with array index",
 			column:      "data->details[0]->subdetails",
-			expectedSql: `'subdetails' in (select [key] from openjson([data], '$."details"[0]'))`,
+			expectedSql: `'subdetails' in (select "key" from openjson("data", '$."details"[0]'))`,
 		},
 	}
 
@@ -402,17 +402,17 @@ func (s *GrammarSuite) TestCompileJsonLength() {
 		{
 			name:        "single path",
 			column:      "data->details",
-			expectedSql: `(select count(*) from openjson([data], '$."details"'))`,
+			expectedSql: `(select count(*) from openjson("data", '$."details"'))`,
 		},
 		{
 			name:        "nested path",
 			column:      "data->details->subdetails",
-			expectedSql: `(select count(*) from openjson([data], '$."details"."subdetails"'))`,
+			expectedSql: `(select count(*) from openjson("data", '$."details"."subdetails"'))`,
 		},
 		{
 			name:        "nested path with array index",
 			column:      "data->details[0]->subdetails",
-			expectedSql: `(select count(*) from openjson([data], '$."details"[0]."subdetails"'))`,
+			expectedSql: `(select count(*) from openjson("data", '$."details"[0]."subdetails"'))`,
 		},
 	}
 
