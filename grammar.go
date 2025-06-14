@@ -327,6 +327,11 @@ func (r *Grammar) CompileJsonSelector(column string) string {
 	return fmt.Sprintf("json_value(%s%s)", field, path)
 }
 
+func (r *Grammar) CompileJsonValues(args ...any) []any {
+
+	return args
+}
+
 func (r *Grammar) CompileLimit(builder sq.SelectBuilder, conditions *driver.Conditions) sq.SelectBuilder {
 	if conditions.Limit == nil {
 		return builder
