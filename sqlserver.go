@@ -9,9 +9,10 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/sqlserver/contracts"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
+
+	"github.com/goravel/sqlserver/contracts"
 )
 
 var _ driver.Driver = &Sqlserver{}
@@ -70,6 +71,7 @@ func (r *Sqlserver) fullConfigsToConfigs(fullConfigs []contracts.FullConfig) []d
 			Prefix:       fullConfig.Prefix,
 			Singular:     fullConfig.Singular,
 			Username:     fullConfig.Username,
+			Timezone:     fullConfig.Timezone,
 		}
 	}
 
@@ -84,8 +86,8 @@ func dsn(fullConfig contracts.FullConfig) string {
 		return ""
 	}
 
-	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
-		fullConfig.Username, fullConfig.Password, fullConfig.Host, fullConfig.Port, fullConfig.Database, fullConfig.Charset)
+	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&timezone=%s&MultipleActiveResultSets=true",
+		fullConfig.Username, fullConfig.Password, fullConfig.Host, fullConfig.Port, fullConfig.Database, fullConfig.Charset, fullConfig.Timezone)
 }
 
 func fullConfigToDialector(fullConfig contracts.FullConfig) gorm.Dialector {

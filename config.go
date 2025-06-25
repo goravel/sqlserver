@@ -90,6 +90,13 @@ func (r *Config) fillDefault(configs []contracts.Config) []contracts.FullConfig 
 		if fullConfig.Charset == "" {
 			fullConfig.Charset = r.config.GetString(fmt.Sprintf("database.connections.%s.charset", r.connection))
 		}
+		if fullConfig.Timezone == "" {
+			timezone := r.config.GetString(fmt.Sprintf("database.connections.%s.timezone", r.connection))
+			if timezone == "" {
+				timezone = r.config.GetString("app.timezone", "UTC")
+			}
+			fullConfig.Timezone = timezone
+		}
 		fullConfigs = append(fullConfigs, fullConfig)
 	}
 
