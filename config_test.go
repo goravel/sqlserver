@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	mocksconfig "github.com/goravel/framework/mocks/config"
+
 	"github.com/goravel/sqlserver/contracts"
 )
 
@@ -50,6 +51,7 @@ func (s *ConfigTestSuite) TestReads() {
 	s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(false).Once()
 	s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nil).Once()
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", s.connection)).Return("utf8mb4").Once()
+	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", s.connection)).Return("UTC").Once()
 	s.Equal([]contracts.FullConfig{
 		{
 			Connection:   s.connection,
@@ -67,6 +69,7 @@ func (s *ConfigTestSuite) TestReads() {
 				Username: "root",
 				Password: "123123",
 			},
+			Timezone: "UTC",
 		},
 	}, s.config.Readers())
 }
@@ -85,6 +88,7 @@ func (s *ConfigTestSuite) TestWrites() {
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", s.connection)).Return("root").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", s.connection)).Return("123123").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", s.connection)).Return("forge").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", s.connection)).Return("UTC").Once()
 
 		s.Equal([]contracts.FullConfig{
 			{
@@ -103,6 +107,7 @@ func (s *ConfigTestSuite) TestWrites() {
 					Username: "root",
 					Password: "123123",
 				},
+				Timezone: "UTC",
 			},
 		}, s.config.Writers())
 	})
@@ -123,6 +128,8 @@ func (s *ConfigTestSuite) TestWrites() {
 		s.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", s.connection)).Return(3306).Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", s.connection)).Return("root").Once()
 		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", s.connection)).Return("123123").Once()
+		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", s.connection)).Return("").Once()
+		s.mockConfig.EXPECT().GetString("app.timezone", "UTC").Return("Asia/Shanghai").Once()
 
 		s.Equal([]contracts.FullConfig{
 			{
@@ -141,6 +148,7 @@ func (s *ConfigTestSuite) TestWrites() {
 					Username: "root",
 					Password: "123123",
 				},
+				Timezone: "Asia/Shanghai",
 			},
 		}, s.config.Writers())
 	})
@@ -156,6 +164,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 	prefix := "goravel_"
 	singular := false
 	charset := "utf8mb4"
+	timezone := "UTC"
 	nameReplacer := strings.NewReplacer("a", "b")
 
 	tests := []struct {
@@ -184,6 +193,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", s.connection)).Return(username).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", s.connection)).Return(password).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", s.connection)).Return(charset).Once()
+				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", s.connection)).Return(timezone).Once()
 			},
 			expectConfigs: []contracts.FullConfig{
 				{
@@ -202,6 +212,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 						Username: username,
 						Password: password,
 					},
+					Timezone: timezone,
 				},
 			},
 		},
@@ -223,6 +234,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(true).Once()
 				s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nameReplacer).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", s.connection)).Return(charset).Once()
+				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", s.connection)).Return(timezone).Once()
 			},
 			expectConfigs: []contracts.FullConfig{
 				{
@@ -241,6 +253,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 						Username: username,
 						Password: password,
 					},
+					Timezone: timezone,
 				},
 			},
 		},

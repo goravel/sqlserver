@@ -36,4 +36,5 @@ type FullConfig struct {
 	NoLowerCase  bool
 	Prefix       string
 	Singular     bool
+	Timezone     string
 }
