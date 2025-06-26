@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
@@ -309,6 +310,8 @@ func (r *Grammar) CompileJsonColumnsUpdate(values map[string]any) (map[string]an
 					bit = 1
 				}
 				value = databasedb.Raw(fmt.Sprintf("cast(%d as bit)", bit))
+			} else if kind == reflect.Float64 || kind == reflect.Float32 {
+				value = databasedb.Raw(r.compileDecimalCastExpr(val.Float()))
 			}
 
 			expr, ok := compiled[column]
@@ -662,6 +665,24 @@ func (r *Grammar) TypeTinyInteger(_ driver.ColumnDefinition) string {
 
 func (r *Grammar) TypeTinyText(_ driver.ColumnDefinition) string {
 	return "nvarchar(255)"
+}
+
+func (r *Grammar) compileDecimalCastExpr(value float64) (string, string) {
+	param := strconv.FormatFloat(value, 'f', -1, 64)
+	parts := strings.Split(param, ".")
+	intLen := len(parts[0])
+	decLen := 0
+
+	if len(parts) > 1 {
+		decLen = len(strings.TrimRight(parts[1], "0"))
+	}
+
+	if decLen == 0 {
+		decLen = 1
+	}
+	precision := intLen + decLen
+
+	return fmt.Sprintf("cast(? as decimal(%d,%d))", precision, decLen), param
 }
 
 func (r *Grammar) getColumns(blueprint driver.Blueprint) []string {
