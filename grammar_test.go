@@ -4,9 +4,12 @@ import (
 	"testing"
 
 	"github.com/goravel/framework/contracts/database/driver"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation/json"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
+	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -295,6 +298,86 @@ func (s *GrammarSuite) TestCompileIndex() {
 
 			sql := s.grammar.CompileIndex(mockBlueprint, test.command)
 			s.Equal(test.expectSql, sql)
+		})
+	}
+}
+
+func (s *GrammarSuite) TestCompileJsonColumnsUpdate() {
+	tests := []struct {
+		name           string
+		values         map[string]any
+		expectedValues []map[string]any
+		hasError       bool
+	}{
+		{
+			name: "invalid values",
+			values: map[string]any{"data->invalid": map[string]any{
+				"value": func() {},
+			}},
+			hasError: true,
+		},
+		{
+			name:   "update single json column",
+			values: map[string]any{"data->details": "details value"},
+			expectedValues: []map[string]any{
+				{"data": databasedb.Raw("json_modify(?,?,?)", databasedb.Raw(`"data"`), `$."details"`, "details value")},
+			},
+		},
+		{
+			name:   "update single json column(with nested path)",
+			values: map[string]any{"data->details->subdetails[0]": "subdetails value"},
+			expectedValues: []map[string]any{
+				{"data": databasedb.Raw("json_modify(?,?,?)", databasedb.Raw(`"data"`), `$."details"."subdetails"[0]`, "subdetails value")},
+			},
+		},
+		{
+			name:   "update multiple json columns",
+			values: map[string]any{"data->details": "details value", "data->info": "info value"},
+			expectedValues: []map[string]any{
+				{
+					"data": databasedb.Raw(
+						"json_modify(?,?,?)",
+						databasedb.Raw(
+							"json_modify(?,?,?)",
+							databasedb.Raw(`"data"`),
+							`$."details"`, "details value",
+						),
+						`$."info"`, "info value",
+					),
+				},
+				{
+					"data": databasedb.Raw(
+						"json_modify(?,?,?)",
+						databasedb.Raw(
+							"json_modify(?,?,?)",
+							databasedb.Raw(`"data"`),
+							`$."info"`, "info value",
+						),
+						`$."details"`, "details value",
+					),
+				},
+			},
+		},
+	}
+
+	mockApp := mocksfoundation.NewApplication(s.T())
+
+	originApp := App
+	App = mockApp
+	s.T().Cleanup(func() {
+		App = originApp
+	})
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			mockApp.EXPECT().GetJson().Return(json.New()).Once()
+			actualValues, err := s.grammar.CompileJsonColumnsUpdate(tt.values)
+			if tt.hasError {
+				s.Error(err)
+			} else {
+				s.Subset(tt.expectedValues, []any{actualValues})
+				s.NoError(err)
+			}
 		})
 	}
 }
