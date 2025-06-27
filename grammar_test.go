@@ -317,6 +317,32 @@ func (s *GrammarSuite) TestCompileJsonColumnsUpdate() {
 			hasError: true,
 		},
 		{
+			name:   "update boolean value",
+			values: map[string]any{"data->bool": true},
+			expectedValues: []map[string]any{
+				{
+					"data": databasedb.Raw(
+						"json_modify(?,?,?)",
+						databasedb.Raw(`"data"`),
+						`$."bool"`, databasedb.Raw("cast(1 as bit)"),
+					),
+				},
+			},
+		},
+		{
+			name:   "update float value",
+			values: map[string]any{"data->float": 456.789},
+			expectedValues: []map[string]any{
+				{
+					"data": databasedb.Raw(
+						"json_modify(?,?,?)",
+						databasedb.Raw(`"data"`),
+						`$."float"`, databasedb.Raw("cast(? as decimal(6,3))", "456.789"),
+					),
+				},
+			},
+		},
+		{
 			name:   "update single json column",
 			values: map[string]any{"data->details": "details value"},
 			expectedValues: []map[string]any{
