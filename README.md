@@ -13,7 +13,7 @@ The Sqlserver driver for facades.Orm() of Goravel.
 Run the command below in your project to install the package automatically:
 
 ```bash
-./artisan package:install github.com/goravel/postgres
+./artisan package:install github.com/goravel/sqlserver
 ``` 
 
 Or check [the setup file](./setup/setup.go) to install the package manually.
