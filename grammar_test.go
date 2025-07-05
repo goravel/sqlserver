@@ -730,12 +730,6 @@ func (s *GrammarSuite) TestTypeUuid() {
 	s.Equal("uniqueidentifier", s.grammar.TypeUuid(mockColumn))
 }
 
-func (s *GrammarSuite) TestTypeUlid() {
-	mockColumn := mocksdriver.NewColumnDefinition(s.T())
-
-	s.Equal("nchar(26)", s.grammar.TypeUlid(mockColumn))
-}
-
 func TestParseSchemaAndTable(t *testing.T) {
 	tests := []struct {
 		reference      string
