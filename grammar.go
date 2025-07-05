@@ -671,6 +671,14 @@ func (r *Grammar) TypeTinyText(_ driver.ColumnDefinition) string {
 	return "nvarchar(255)"
 }
 
+func (r *Grammar) TypeUuid(_ driver.ColumnDefinition) string {
+	return "uniqueidentifier"
+}
+
+func (r *Grammar) TypeUlid(_ driver.ColumnDefinition) string {
+	return "nchar(26)"
+}
+
 func (r *Grammar) compileDecimalCastExpr(value float64) (string, string) {
 	param := strconv.FormatFloat(value, 'f', -1, 64)
 	parts := strings.Split(param, ".")
