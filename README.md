@@ -6,7 +6,7 @@ The Sqlserver driver for facades.Orm() of Goravel.
 
 | goravel/sqlserver | goravel/framework |
 |------------------|-------------------|
-| v1.0.*          | v1.16.*           |
+| v1.4.*          | v1.16.*           |
 
 ## Install
 
