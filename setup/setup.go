@@ -43,11 +43,13 @@ func main() {
 				modify.AddImport(driverContract),
 				modify.AddImport(sqlserverFacades, "sqlserverfacades"),
 			).
-				Find(match.Config("database.connections")).Modify(modify.AddConfig("sqlserver", config)),
+				Find(match.Config("database.connections")).Modify(modify.AddConfig("sqlserver", config)).
+				Find(match.Config("database")).Modify(modify.AddConfig("default", `"sqlserver"`)),
 		).
 		Uninstall(
 			// Remove sqlserver connection config from database.go
 			modify.GoFile(databaseConfigPath).
+				Find(match.Config("database")).Modify(modify.AddConfig("default", `""`)).
 				Find(match.Config("database.connections")).Modify(modify.RemoveConfig("sqlserver")).
 				Find(match.Imports()).Modify(
 				modify.RemoveImport(driverContract),
