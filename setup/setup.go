@@ -55,7 +55,7 @@ func main() {
 			),
 
 			// Remove sqlserver service provider from app.go
-			modify.GoFile(path.Config("app.go")).
+			modify.GoFile(appConfigPath).
 				Find(match.Providers()).Modify(modify.Unregister(sqlserverServiceProvider)).
 				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 		).
