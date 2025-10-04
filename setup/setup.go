@@ -24,22 +24,40 @@ var config = `map[string]any{
     }`
 
 func main() {
+	appConfigPath := path.Config("app.go")
+	databaseConfigPath := path.Config("database.go")
+	modulePath := packages.GetModulePath()
+	sqlserverServiceProvider := "&sqlserver.ServiceProvider{}"
+	driverContract := "github.com/goravel/framework/contracts/database/driver"
+	sqlserverFacades := "github.com/goravel/sqlserver/facades"
+
 	packages.Setup(os.Args).
 		Install(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Imports()).Modify(modify.AddImport(packages.GetModulePath())).
-				Find(match.Providers()).Modify(modify.Register("&sqlserver.ServiceProvider{}", "&database.ServiceProvider{}")),
-			modify.GoFile(path.Config("database.go")).
-				Find(match.Imports()).Modify(modify.AddImport("github.com/goravel/framework/contracts/database/driver"), modify.AddImport("github.com/goravel/sqlserver/facades", "sqlserverfacades")).
+			// Add sqlserver service provider to app.go
+			modify.GoFile(appConfigPath).
+				Find(match.Imports()).Modify(modify.AddImport(modulePath)).
+				Find(match.Providers()).Modify(modify.Register(sqlserverServiceProvider)),
+
+			// Add sqlserver connection config to database.go
+			modify.GoFile(databaseConfigPath).Find(match.Imports()).Modify(
+				modify.AddImport(driverContract),
+				modify.AddImport(sqlserverFacades, "sqlserverfacades"),
+			).
 				Find(match.Config("database.connections")).Modify(modify.AddConfig("sqlserver", config)),
 		).
 		Uninstall(
-			modify.GoFile(path.Config("app.go")).
-				Find(match.Providers()).Modify(modify.Unregister("&sqlserver.ServiceProvider{}")).
-				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
-			modify.GoFile(path.Config("database.go")).
+			// Remove sqlserver connection config from database.go
+			modify.GoFile(databaseConfigPath).
 				Find(match.Config("database.connections")).Modify(modify.RemoveConfig("sqlserver")).
-				Find(match.Imports()).Modify(modify.RemoveImport("github.com/goravel/framework/contracts/database/driver"), modify.RemoveImport("github.com/goravel/sqlserver/facades", "sqlserverfacades")),
+				Find(match.Imports()).Modify(
+				modify.RemoveImport(driverContract),
+				modify.RemoveImport(sqlserverFacades, "sqlserverfacades"),
+			),
+
+			// Remove sqlserver service provider from app.go
+			modify.GoFile(path.Config("app.go")).
+				Find(match.Providers()).Modify(modify.Unregister(sqlserverServiceProvider)).
+				Find(match.Imports()).Modify(modify.RemoveImport(packages.GetModulePath())),
 		).
 		Execute()
 }
