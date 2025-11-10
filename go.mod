@@ -9,7 +9,7 @@ require (
 	github.com/goravel/framework v1.16.5
 	github.com/spf13/cast v1.10.0
 	github.com/stretchr/testify v1.11.1
-	gorm.io/driver/sqlserver v1.6.1
+	gorm.io/driver/sqlserver v1.6.3
 	gorm.io/gorm v1.31.1
 )
 
