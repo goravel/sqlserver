@@ -57,13 +57,13 @@ func main() {
 			Find(databaseConfig).Modify(modify.AddConfig("default", `"sqlserver"`)),
 	).Uninstall(
 		// Remove sqlserver connection config from database.go
-		modify.GoFile(databaseConfigPath).
+		modify.WhenFileExists(databaseConfigPath, modify.GoFile(databaseConfigPath).
 			Find(databaseConfig).Modify(modify.AddConfig("default", `""`)).
 			Find(databaseConnectionsConfig).Modify(modify.RemoveConfig("sqlserver")).
 			Find(match.Imports()).Modify(
 			modify.RemoveImport(driverContract),
 			modify.RemoveImport(sqlserverFacades, "sqlserverfacades"),
-		),
+		)),
 
 		// Remove sqlserver service provider from app.go if not using bootstrap setup
 		modify.When(func(_ map[string]any) bool {
