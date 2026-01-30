@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/contracts/process"
 	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 	"gorm.io/driver/sqlserver"
@@ -18,24 +19,30 @@ import (
 var _ driver.Driver = &Sqlserver{}
 
 type Sqlserver struct {
-	config contracts.ConfigBuilder
-	log    log.Log
+	config  contracts.ConfigBuilder
+	log     log.Log
+	process process.Process
 }
 
-func NewSqlserver(config config.Config, log log.Log, connection string) *Sqlserver {
+func NewSqlserver(config config.Config, log log.Log, process process.Process, connection string) *Sqlserver {
 	return &Sqlserver{
-		config: NewConfig(config, connection),
-		log:    log,
+		config:  NewConfig(config, connection),
+		log:     log,
+		process: process,
 	}
 }
 
 func (r *Sqlserver) Docker() (docker.DatabaseDriver, error) {
+	if r.process == nil {
+		return nil, fmt.Errorf("process facade not set")
+	}
+
 	writers := r.config.Writers()
 	if len(writers) == 0 {
 		return nil, errors.DatabaseConfigNotFound
 	}
 
-	return NewDocker(r.config, writers[0].Database, writers[0].Username, writers[0].Password), nil
+	return NewDocker(r.config, r.process, writers[0].Database, writers[0].Username, writers[0].Password), nil
 }
 
 func (r *Sqlserver) Grammar() driver.Grammar {
