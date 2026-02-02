@@ -46,7 +46,7 @@ func main() {
 		// Add sqlserver service provider to providers.go if using bootstrap setup
 		modify.When(func(_ map[string]any) bool {
 			return env.IsBootstrapSetup()
-		}, modify.AddProviderApply(moduleImport, sqlserverServiceProvider)),
+		}, modify.RegisterProvider(moduleImport, sqlserverServiceProvider)),
 
 		// Add sqlserver connection config to database.go
 		modify.GoFile(databaseConfigPath).Find(match.Imports()).Modify(
@@ -75,6 +75,6 @@ func main() {
 		// Remove sqlserver service provider from providers.go if using bootstrap setup
 		modify.When(func(_ map[string]any) bool {
 			return env.IsBootstrapSetup()
-		}, modify.RemoveProviderApply(moduleImport, sqlserverServiceProvider)),
+		}, modify.UnregisterProvider(moduleImport, sqlserverServiceProvider)),
 	).Execute()
 }
