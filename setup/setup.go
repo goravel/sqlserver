@@ -12,6 +12,7 @@ import (
 
 func main() {
 	setup := packages.Setup(os.Args)
+	driver := "sqlserver"
 	config := `map[string]any{
         "host":     config.Env("DB_HOST"),
         "port":     config.Env("DB_PORT"),
@@ -22,10 +23,9 @@ func main() {
         "prefix":   "",
         "singular": false,
         "via": func() (driver.Driver, error) {
-            return sqlserverfacades.Sqlserver("sqlserver")
+            return sqlserverfacades.Sqlserver("` + driver + `")
         },
     }`
-
 	appConfigPath := path.Config("app.go")
 	databaseConfigPath := path.Config("database.go")
 	moduleImport := setup.Paths().Module().Import()
@@ -33,7 +33,6 @@ func main() {
 	driverContract := "github.com/goravel/framework/contracts/database/driver"
 	sqlserverFacades := "github.com/goravel/sqlserver/facades"
 	databaseConnectionsConfig := match.Config("database.connections")
-	databaseConfig := match.Config("database")
 
 	setup.Install(
 		// Add sqlserver service provider to app.go if not using bootstrap setup
@@ -52,14 +51,15 @@ func main() {
 		modify.GoFile(databaseConfigPath).Find(match.Imports()).Modify(
 			modify.AddImport(driverContract),
 			modify.AddImport(sqlserverFacades, "sqlserverfacades"),
-		).
-			Find(databaseConnectionsConfig).Modify(modify.AddConfig("sqlserver", config)).
-			Find(databaseConfig).Modify(modify.AddConfig("default", `"sqlserver"`)),
+		).Find(databaseConnectionsConfig).Modify(modify.AddConfig(driver, config)),
+
+		// Add DB_CONNECTION=sqlserver to .env
+		modify.WhenFileExists(path.Base(".env"), modify.Env(path.Base(".env"), "DB_CONNECTION", driver)),
+		modify.WhenFileExists(path.Base(".env.example"), modify.Env(path.Base(".env.example"), "DB_CONNECTION", driver)),
 	).Uninstall(
 		// Remove sqlserver connection config from database.go
 		modify.WhenFileExists(databaseConfigPath, modify.GoFile(databaseConfigPath).
-			Find(databaseConfig).Modify(modify.AddConfig("default", `""`)).
-			Find(databaseConnectionsConfig).Modify(modify.RemoveConfig("sqlserver")).
+			Find(databaseConnectionsConfig).Modify(modify.RemoveConfig(driver)).
 			Find(match.Imports()).Modify(
 			modify.RemoveImport(driverContract),
 			modify.RemoveImport(sqlserverFacades, "sqlserverfacades"),
